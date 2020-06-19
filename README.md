@@ -1,9 +1,5 @@
 # go-ipld-prime-proto
 
-[![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](https://protocol.ai/)
-[![Coverage Status](https://codecov.io/gh/ipld/go-ipld-prime-proto/branch/master/graph/badge.svg)](https://codecov.io/gh/ipld/go-ipld-prime-proto)
-[![Travis CI](https://travis-ci.com/ipld/go-ipld-prime-proto.svg?branch=master)](https://travis-ci.com/ipld/go-ipld-prime-proto)
-
 > An implementation of the [DAG Protobuf](https://github.com/ipld/specs/blob/master/block-layer/codecs/dag-pb.md) for the [go-ipld-prime library](https://github.com/ipld/go-ipld-prime)
 
 ## Table of Contents
@@ -69,4 +65,4 @@ Small note: If editing the Readme, please conform to the [standard-readme](https
 
 This library is dual-licensed under Apache 2.0 and MIT terms.
 
-Copyright 2019. Protocol Labs, Inc.
+Copyright 2020. TRON-US.
