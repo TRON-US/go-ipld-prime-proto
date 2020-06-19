@@ -194,7 +194,7 @@ func TestUnixFSSelectorCopy(t *testing.T) {
 	Wish(t, err, ShouldEqual, nil)
 
 	// Setup a UnixFS file reader
-	n, err := unixfile.NewUnixfsFile(ctx, dagService2, otherNode)
+	n, err := unixfile.NewUnixfsFile(ctx, dagService2, otherNode, unixfile.UnixfsFileOptions{})
 	Wish(t, err, ShouldEqual, nil)
 	fn, ok := n.(files.File)
 	Wish(t, ok, ShouldEqual, true)
