@@ -8,17 +8,17 @@ import (
 
 // AddDagPBSupportToChooser takes an existing NodeBuilderChooser and subs in
 // Protobuf and Raw node builders where neccesary
-func AddDagPBSupportToChooser(existing traversal.NodeBuilderChooser) traversal.NodeBuilderChooser {
-	return func(lnk ipld.Link, lnkCtx ipld.LinkContext) ipld.NodeBuilder {
+func AddDagPBSupportToChooser(existing traversal.LinkTargetNodePrototypeChooser) traversal.LinkTargetNodePrototypeChooser {
+	return func(lnk ipld.Link, lnkCtx ipld.LinkContext) (ipld.NodePrototype, error) {
 		c, ok := lnk.(cidlink.Link)
 		if !ok {
 			return existing(lnk, lnkCtx)
 		}
 		switch c.Cid.Prefix().Codec {
 		case 0x70:
-			return PBNode__NodeBuilder()
+			return Type.PBNode, nil
 		case 0x55:
-			return RawNode__NodeBuilder()
+			return Type.RawNode, nil
 		default:
 			return existing(lnk, lnkCtx)
 		}

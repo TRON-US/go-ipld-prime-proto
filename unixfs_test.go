@@ -24,8 +24,8 @@ import (
 	ipldformat "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	ipld "github.com/ipld/go-ipld-prime"
-	ipldfree "github.com/ipld/go-ipld-prime/impl/free"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/traversal"
 	"github.com/ipld/go-ipld-prime/traversal/selector"
 	"github.com/ipld/go-ipld-prime/traversal/selector/builder"
@@ -130,30 +130,32 @@ func TestUnixFSSelectorCopy(t *testing.T) {
 
 	// load the root of the UnixFS dag in go-ipld-prime
 	clink := cidlink.Link{Cid: nd.Cid()}
-	primeNd, err := clink.Load(ctx, ipld.LinkContext{}, dagpb.PBNode__NodeBuilder(), loader)
+	nb := dagpb.Type.PBNode.NewBuilder()
+	err = clink.Load(ctx, ipld.LinkContext{}, nb, loader)
 	Wish(t, err, ShouldEqual, nil)
 
+	primeNd := nb.Build()
 	// get a protobuf link builder
 	pbLinkBuilder := clink.LinkBuilder()
 
 	// get a raw link builder
-	pbNode, ok := primeNd.(dagpb.PBNode)
-	link, err := pbNode.Links.LookupIndex(0)
+	links, err := primeNd.LookupByString("Links")
 	Wish(t, err, ShouldEqual, nil)
-	pbLink, ok := link.(dagpb.PBLink)
-	Wish(t, ok, ShouldEqual, true)
-	rawLink, err := pbLink.Hash.AsLink()
+	link, err := links.LookupByIndex(0)
 	Wish(t, err, ShouldEqual, nil)
-	rawLinkBuilder := rawLink.LinkBuilder()
-	Wish(t, ok, ShouldEqual, true)
+	rawLink, err := link.LookupByString("Hash")
+	Wish(t, err, ShouldEqual, nil)
+	rawLinkLink, err := rawLink.AsLink()
+	Wish(t, err, ShouldEqual, nil)
+	rawLinkBuilder := rawLinkLink.LinkBuilder()
 
 	// setup a node builder chooser with DagPB + Raw support
-	var defaultChooser traversal.NodeBuilderChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) ipld.NodeBuilder {
-		return ipldfree.NodeBuilder()
+	var defaultChooser traversal.LinkTargetNodePrototypeChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) (ipld.NodePrototype, error) {
+		return basicnode.Prototype.Any, nil
 	})
 
 	// create a selector for the whole UnixFS dag
-	ssb := builder.NewSelectorSpecBuilder(ipldfree.NodeBuilder())
+	ssb := builder.NewSelectorSpecBuilder(basicnode.Prototype.Any)
 
 	allSelector, err := ssb.ExploreRecursive(selector.RecursionLimitNone(),
 		ssb.ExploreAll(ssb.ExploreRecursiveEdge())).Selector()
@@ -162,8 +164,8 @@ func TestUnixFSSelectorCopy(t *testing.T) {
 	// execute the traversal
 	err = traversal.Progress{
 		Cfg: &traversal.Config{
-			LinkLoader:             loader,
-			LinkNodeBuilderChooser: defaultChooser,
+			LinkLoader:                     loader,
+			LinkTargetNodePrototypeChooser: defaultChooser,
 		},
 	}.WalkAdv(primeNd, allSelector, func(pg traversal.Progress, nd ipld.Node, r traversal.VisitReason) error {
 		// for each node encountered, check if it's a DabPB Node or a Raw Node and if so
