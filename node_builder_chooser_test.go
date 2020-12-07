@@ -7,21 +7,21 @@ import (
 	"github.com/ipfs/go-merkledag"
 	ipld "github.com/ipld/go-ipld-prime"
 	dagpb "github.com/ipld/go-ipld-prime-proto"
-	ipldfree "github.com/ipld/go-ipld-prime/impl/free"
 	cidlink "github.com/ipld/go-ipld-prime/linking/cid"
+	basicnode "github.com/ipld/go-ipld-prime/node/basic"
 	"github.com/ipld/go-ipld-prime/traversal"
 	mh "github.com/multiformats/go-multihash"
 	. "github.com/warpfork/go-wish"
 )
 
 func TestNodeBuilderChooser(t *testing.T) {
-	nb1 := ipldfree.NodeBuilder()
-	nb2 := dagpb.String__NodeBuilder()
-	var nb1Chooser traversal.NodeBuilderChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) ipld.NodeBuilder {
-		return nb1
+	nb1 := basicnode.Prototype.Any
+	nb2 := basicnode.Prototype.String
+	var nb1Chooser traversal.LinkTargetNodePrototypeChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) (ipld.NodePrototype, error) {
+		return nb1, nil
 	})
-	var nb2Chooser traversal.NodeBuilderChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) ipld.NodeBuilder {
-		return nb2
+	var nb2Chooser traversal.LinkTargetNodePrototypeChooser = dagpb.AddDagPBSupportToChooser(func(ipld.Link, ipld.LinkContext) (ipld.NodePrototype, error) {
+		return nb2, nil
 	})
 	bytes := randomBytes(256)
 	protoPrefix := merkledag.V1CidPrefix()
@@ -48,11 +48,23 @@ func TestNodeBuilderChooser(t *testing.T) {
 	rawLink := cidlink.Link{Cid: rawCid}
 	cborLink := cidlink.Link{Cid: cborCid}
 
-	Wish(t, nb1Chooser(protoLink, ipld.LinkContext{}), ShouldEqual, dagpb.PBNode__NodeBuilder())
-	Wish(t, nb1Chooser(rawLink, ipld.LinkContext{}), ShouldEqual, dagpb.RawNode__NodeBuilder())
-	Wish(t, nb1Chooser(cborLink, ipld.LinkContext{}), ShouldEqual, nb1)
-	Wish(t, nb2Chooser(protoLink, ipld.LinkContext{}), ShouldEqual, dagpb.PBNode__NodeBuilder())
-	Wish(t, nb2Chooser(rawLink, ipld.LinkContext{}), ShouldEqual, dagpb.RawNode__NodeBuilder())
-	Wish(t, nb2Chooser(cborLink, ipld.LinkContext{}), ShouldEqual, nb2)
+	ns, err := nb1Chooser(protoLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, dagpb.Type.PBNode)
+	ns, err = nb1Chooser(rawLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, dagpb.Type.RawNode)
+	ns, err = nb1Chooser(cborLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, nb1)
+	ns, err = nb2Chooser(protoLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, dagpb.Type.PBNode)
+	ns, err = nb2Chooser(rawLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, dagpb.Type.RawNode)
+	ns, err = nb2Chooser(cborLink, ipld.LinkContext{})
+	Wish(t, err, ShouldEqual, nil)
+	Wish(t, ns, ShouldEqual, nb2)
 
 }
